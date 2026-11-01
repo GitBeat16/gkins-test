@@ -1,0 +1,31 @@
+# Copy to .github/workflows/gkins-refresh.yml in a TEST profile repo,
+# and copy contrib.mjs to .gkins/contrib.mjs in the same repo.
+name: GKins refresh
+
+on:
+  schedule:
+    - cron: '17 3 * * *'   # daily, off the hour to avoid GitHub's busy :00 slot
+  workflow_dispatch:        # lets you run it from the Actions tab right away
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Render contribution calendar
+        run: node .gkins/contrib.mjs
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Commit if changed
+        run: |
+          git config user.name  "gkins-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add readme/contrib.svg
+          git diff --cached --quiet || git commit -m "chore: refresh contribution calendar"
+          git push
